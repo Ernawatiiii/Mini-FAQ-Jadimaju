@@ -44,3 +44,55 @@ mini-faq-jadimaju/
     ├── index.html        # Halaman depan (Form input buat customer)
     ├── login.html        # Halaman login admin CS
     └── admin.html        # Dashboard utama buat admin mengelola FAQ
+```
+**Fitur Utama & Cara Kerjanya** (app.py)
+* **1. Form Pertanyaan Publik** (/ dan /submit)
+       Customer memasukkan nama, email, dan pertanyaan. Sistem langsung nge-cek di sisi server: kalau ada kolom yang kosong, data tidak akan tersimpan. apabila lengkap, akan langsung masuk database dan muncul notifikasi sukses.
+* **2. Keamanan Halaman Admin** (/login dan /logout)
+       Halaman dashboard admin (/admin), fungsi menjawab, dan fungsi menghapus data sudah dikunci pakai Session Flask. Kalau ada orang iseng mau buka langsung tanpa login, sistem bakal otomatis nendang mereka kembali ke halaman login.
+* **3. Pencarian & Filter Dinamis di Dashboard**
+       Admin bisa mencari pertanyaan berdasarkan nama/email/isi teks, sekaligus memfilternya berdasarkan status (apakah "Sudah Dijawab" atau "Belum"). Semuanya diproses lewat kueri SQL (WHERE 1=1 dan LIKE) yang digabung menjadi satu fungsi agar lebih efisien.
+* **4. Otomatisasi Draf Jawaban AI** (Fitur Bonus)
+       Begitu customer kirim pertanyaan, backend Flask langsung manggil API Gemini 2.5 Flash di latar belakang.
+       *- UX Optimization: Prompt AI diatur ketat supaya Gemini memberikan jawaban teks polos (tanpa simbol markdown bintang  atau pagar # yang membuat berantakan) dan membaginya ke dalam paragraf pendek agar nyaman dibaca admin.*
+        *- One-Click Template: Di halaman admin ada tombol Use Draft Template berbasis JavaScript. Begitu diklik, draf dari Gemini langsung kesalin otomatis ke kotak jawaban admin. Admin tinggal edit sedikit, lalu klik kirim.*
+  **Cara Menjalankan Proyek di Laptop Lokal**
+    * **1. Clone Repository Ini:**
+  ```text
+   git clone [https://github.com/Ernawatiiii/Mini-FAQ-Jadimaju.git](https://github.com/Ernawatiiii/Mini-FAQ-Jadimaju.git) cd Mini-FAQ-Jadimaju
+  ```
+     * **2. Membuat & Mengaktifkan Virtual Environment:** 
+   ```text
+python3 -m venv venv
+source venv/bin/activate```
+
+   * **3. Install Semua Library:** 
+```text
+pip install -r requirements.txt
+```
+   * **4. Setup API Key:** 
+          Bikin file .env di folder utama, lalu isi:
+```text
+GEMINI_API_KEY=isi_api_key_gemini
+```
+   * **5. Bikin Database Awal & Jalankan Web:**
+```text
+python3 init_db.py
+python3 app.py
+```
+* **Buka browser di alamat**
+```text
+http://127.0.0.1:5000
+```
+**Tantangan & Rencana Pengembangan Ke Depan**
+*Tantangan yang Berhasil Diselesaikan:*
+ 
+ **- Format AI yang Berantakan:** Di awal, Gemini sering mengeluarkan format markdown tebal (). Ini merusak tampilan kotak text admin. Masalah ini diselesaikan dengan memperketat instruksi (system prompt) agar outputnya wajib teks polos teratur.
+ 
+ **- Salah Klik Hapus:** Agar data tidak sengaja terhapus karena admin salah pencet, ditambahkan konfirmasi pop-up "Apakah Anda yakin?" lewat JavaScript pada tombol hapus.
+
+*Ide Pengembangan Masa Depan:*
+    
+  **- Keamanan Password:** Mengganti password admin yang masih ditulis manual yang ada di kode menggunakan sistem enkripsi nyata (Bcrypt).
+   
+  **- Antrean AI (Celery/Redis):** Agar loading web pas customer klik kirim tidak merasa melambat saat menunggu respon API Gemini.
