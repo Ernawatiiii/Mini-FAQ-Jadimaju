@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Qbox AI - Panel Admin</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-slate-50 min-h-screen font-sans antialiased text-slate-800">
+
+    <div class="max-w-6xl mx-auto px-4 py-8">
+        <header class="bg-white rounded-2xl shadow-sm border border-slate-100 p-6 flex justify-between items-center mb-6">
+            <div>
+                <h1 class="text-2xl font-bold text-slate-950 tracking-tight">Qbox AI Dashboard</h1>
+                <p class="text-sm text-slate-500">Ruang Kerja Pengelolaan Pertanyaan Pelanggan</p>
+            </div>
+            <a href="{{ url_for('logout') }}" class="px-4 py-2 bg-rose-50 text-rose-600 hover:bg-rose-100 rounded-xl text-sm font-semibold transition-all duration-200">
+                Logout
+            </a>
+        </header>
+
+        {% with messages = get_flashed_messages() %}
+          {% if messages %}
+            {% for message in messages %}
+              <div class="mb-6 p-4 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-sm font-medium shadow-sm">
+                {{ message }}
+              </div>
+            {% endfor %}
+          {% endif %}
+        {% endwith %}
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-6 mb-6">
+            <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 border-l-4 border-l-indigo-600 transition-all duration-200 hover:shadow-md">
+                <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Total Pertanyaan Masuk</h3>
+                <p class="text-4xl font-extrabold text-slate-900">{{ total_pertanyaan }}</p>
+            </div>
+            <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 border-l-4 border-l-emerald-500 transition-all duration-200 hover:shadow-md">
+                <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Jumlah Sudah Dijawab</h3>
+                <p class="text-4xl font-extrabold text-slate-900">{{ total_dijawab }}</p>
+            </div>
+        </div>
+
+        <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-100 mb-8">
+            <form method="GET" action="{{ url_for('admin_dashboard') }}" class="flex flex-col sm:flex-row gap-3">
+                <input type="text" name="search" placeholder="Cari nama, email, atau kata kunci pertanyaan..." value="{{ search_query }}"
+                    class="flex-1 px-4 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-sm transition-all">
+                
+                <select name="status" class="px-4 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-sm bg-white transition-all">
+                    <option value="">-- Semua Status --</option>
+                    <option value="pending" {% if status_filter == 'pending' %}selected{% endif %}>Pending</option>
+                    <option value="replied" {% if status_filter == 'replied' %}selected{% endif %}>Dijawab</option>
+                </select>
+                
+                <button type="submit" class="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-xl text-sm transition-colors shadow-md shadow-indigo-600/10">
+                    Cari & Filter
+                </button>
+                {% if search_query or status_filter %}
+                    <a href="{{ url_for('admin_dashboard') }}" class="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-xl text-sm font-medium text-center transition-colors">
+                        Reset
+                    </a>
+                {% endif %}
+            </form>
+        </div>
+
+        <div class="space-y-6">
+            {% if daftar_pertanyaan %}
+                {% for row in daftar_pertanyaan %}
+                <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-6 space-y-4 transition-all hover:shadow-lg hover:border-slate-200 duration-300">
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <h3 class="font-bold text-slate-900 text-lg tracking-tight">{{ row['nama'] }}</h3>
+                            <p class="text-xs text-slate-400 font-medium">{{ row['email'] }}</p>
+                        </div>
+                        
+                        {% if row['status'] == 'pending' %}
+                        <span class="inline-flex items-center gap-1.5 px-3 py-1 text-xs font-bold rounded-full bg-amber-50 text-amber-700 border border-amber-200 animate-pulse">
+                            <span class="w-1.5 h-1.5 rounded-full bg-amber-500"></span>
+                            PENDING
+                        </span>
+                        {% else %}
+                        <span class="inline-flex items-center gap-1.5 px-3 py-1 text-xs font-bold rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">
+                            <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                            DIJAWAB
+                        </span>
+                        {% endif %}
+                    </div>
+
+                    <div class="bg-slate-50 border-l-4 border-indigo-500 p-4 rounded-r-xl text-slate-700 italic text-sm leading-relaxed">
+                        "{{ row['isi_pertanyaan'] }}"
+                    </div>
+
+                    <div class="bg-indigo-50/40 border border-indigo-100/70 p-4 rounded-xl space-y-2">
+                        <div class="flex justify-between items-center">
+                            <div class="flex items-center gap-1.5 text-xs font-bold text-indigo-600 tracking-wide uppercase">
+                                <span>✨</span> Draf Otomatis Qbox AI (Gemini):
+                            </div>
+                            <button type="button" onclick="gunakanDraft('{{ row['id'] }}', `{{ row['draft_jawaban_ai'] | replace('`', '\\`') }}`)"
+                                class="inline-flex items-center px-3 py-1 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-lg text-xs transition-colors duration-200 shadow-sm focus:outline-none active:scale-95">
+                                Use Draft Template
+                            </button>
+                        </div>
+                        <p class="text-sm text-slate-600 leading-relaxed" id="draft-text-{{ row['id'] }}">{{ row['draft_jawaban_ai'] }}</p>
+                    </div>
+
+                    <form action="{{ url_for('jawab_pertanyaan', id=row['id']) }}" method="POST" class="space-y-3">
+                        <div>
+                            <label class="block text-xs font-bold text-slate-400 uppercase tracking-wide mb-1.5">Jawaban Resmi Admin:</label>
+                            <textarea id="textarea-jawaban-{{ row['id'] }}" name="jawaban_admin" required placeholder="Ketik jawaban resmi di sini atau klik 'Use Draft Template' di atas..." class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-sm transition-all h-28 leading-relaxed">{% if row['jawaban_admin'] %}{{ row['jawaban_admin'] }}{% endif %}</textarea>
+                        </div>
+                        
+                        <div class="flex justify-between items-center pt-3 border-t border-slate-100">
+                            <button type="submit" class="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold rounded-xl text-xs shadow-md shadow-emerald-600/10 transition-all active:scale-95">
+                                Kirim Jawaban Resmi
+                            </button>
+                    </form>
+                            <form action="{{ url_for('hapus_pertanyaan', id=row['id']) }}" method="POST" onsubmit="return confirm('Apakah Anda yakin ingin menghapus pertanyaan ini dari database?');">
+                                <button type="submit" class="px-3 py-2 bg-rose-50 hover:bg-rose-100 text-rose-600 font-semibold rounded-xl text-xs transition-colors duration-200">
+                                    Hapus Pertanyaan
+                                </button>
+                            </form>
+                        </div>
+                </div>
+                {% endfor %}
+            {% else %}
+                <div class="bg-white p-12 text-center rounded-2xl border border-slate-100 shadow-sm space-y-3">
+                    <div class="text-5xl animate-bounce">📥</div>
+                    <h3 class="font-bold text-slate-800 text-lg">Tidak Ada Data Pertanyaan</h3>
+                    <p class="text-sm text-slate-400 max-w-sm mx-auto leading-relaxed">Antrean sedang kosong atau kata kunci filter pencarian Anda tidak ditemukan di dalam sistem database.</p>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <script>
+        function gunakanDraft(id, text) {
+            const textarea = document.getElementById('textarea-jawaban-' + id);
+            if (textarea) {
+                textarea.value = text;
+                textarea.focus();
+                textarea.classList.add('ring-2', 'ring-emerald-500');
+                setTimeout(() => {
+                    textarea.classList.remove('ring-2', 'ring-emerald-500');
+                }, 800);
+            }
+        }
+    </script>
+</body>
+</html>
